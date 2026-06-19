@@ -54,16 +54,18 @@ const VALUE_TO_ROTATION: Record<number, { x: number; y: number }> = {
 
 function DiceFace({
   value,
-  style,
+  rotation,
+  depth,
 }: {
   value: number;
-  style?: React.CSSProperties;
+  rotation: string;
+  depth: number;
 }) {
   const dots = DOT_POSITIONS[value];
   return (
     <div
       style={{
-        ...style,
+        transform: `${rotation} translateZ(${depth}px)`,
         pointerEvents: "none",
         background: "linear-gradient(165deg, #ffffff 0%, #f3ebd9 100%)",
         boxShadow:
@@ -95,9 +97,22 @@ export default function Dice({ value, rolling, disabled, onRoll }: DiceProps) {
   const [displayTransform, setDisplayTransform] = useState(
     "rotateX(18deg) rotateY(-22deg)"
   );
+  const [depth, setDepth] = useState(24);
   const rafRef = useRef(0);
   const rotXRef = useRef(18);
   const rotYRef = useRef(-22);
+
+  useEffect(() => {
+    const updateDepth = () => {
+      const w = window.innerWidth;
+      if (w >= 640) setDepth(40);
+      else if (w >= 400) setDepth(32);
+      else setDepth(24);
+    };
+    updateDepth();
+    window.addEventListener("resize", updateDepth);
+    return () => window.removeEventListener("resize", updateDepth);
+  }, []);
 
   useEffect(() => {
     if (rolling && !isAnimating) {
@@ -151,23 +166,26 @@ export default function Dice({ value, rolling, disabled, onRoll }: DiceProps) {
   const hasSettled = !isAnimating && value !== null;
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div
-        className="relative flex h-24 w-24 items-center justify-center rounded-2xl"
+    <div className="flex flex-col items-center gap-1 xs:gap-2">
+      <button
+        type="button"
+        onClick={onRoll}
+        disabled={disabled || rolling}
+        aria-label="Roll dice"
+        className={`relative flex h-16 w-16 items-center justify-center rounded-2xl transition-transform duration-200 xs:h-20 xs:w-20 sm:h-24 sm:w-24 ${
+          disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+        } ${showRoll ? "hover:scale-105" : ""}`}
         style={{
           background: "linear-gradient(180deg, #1a4a73 0%, #0c2945 100%)",
           boxShadow:
             "inset 0 2px 4px rgba(255,255,255,0.15), inset 0 -3px 6px rgba(0,0,0,0.35), 0 3px 0 #051320",
         }}
       >
-        <button
-          onClick={onRoll}
-          disabled={disabled || rolling}
-          aria-label="Roll dice"
-          className={`group relative h-20 w-20 transition-all duration-200 ${
-            disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-          } ${showRoll ? "hover:scale-105" : ""}`}
-          style={{ perspective: "600px" }}
+        <div
+          className="pointer-events-none relative h-12 w-12 xs:h-16 xs:w-16 sm:h-20 sm:w-20"
+          style={{
+            perspective: "600px",
+          }}
         >
           <div
             className="relative h-full w-full"
@@ -177,23 +195,22 @@ export default function Dice({ value, rolling, disabled, onRoll }: DiceProps) {
               transition: hasSettled
                 ? "transform 1.2s cubic-bezier(0.22, 1, 0.36, 1)"
                 : "none",
-              pointerEvents: "none",
             }}
           >
-            <DiceFace value={1} style={{ transform: "translateZ(40px)" }} />
-            <DiceFace value={6} style={{ transform: "rotateY(180deg) translateZ(40px)" }} />
-            <DiceFace value={2} style={{ transform: "rotateY(90deg) translateZ(40px)" }} />
-            <DiceFace value={5} style={{ transform: "rotateY(-90deg) translateZ(40px)" }} />
-            <DiceFace value={3} style={{ transform: "rotateX(90deg) translateZ(40px)" }} />
-            <DiceFace value={4} style={{ transform: "rotateX(-90deg) translateZ(40px)" }} />
+            <DiceFace value={1} rotation="" depth={depth} />
+            <DiceFace value={6} rotation="rotateY(180deg)" depth={depth} />
+            <DiceFace value={2} rotation="rotateY(90deg)" depth={depth} />
+            <DiceFace value={5} rotation="rotateY(-90deg)" depth={depth} />
+            <DiceFace value={3} rotation="rotateX(90deg)" depth={depth} />
+            <DiceFace value={4} rotation="rotateX(-90deg)" depth={depth} />
           </div>
           <div
             className={`pointer-events-none absolute -bottom-1 left-1/2 h-2 w-16 -translate-x-1/2 rounded-full bg-black/40 blur-sm transition-all duration-700 ${
               isAnimating ? "scale-75 opacity-50" : "scale-100 opacity-90"
             }`}
           />
-        </button>
-      </div>
+        </div>
+      </button>
       {showRoll && (
         <span className="text-xs font-bold text-amber-300 drop-shadow">
           Tap to roll
