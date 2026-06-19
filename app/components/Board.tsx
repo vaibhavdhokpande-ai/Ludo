@@ -20,17 +20,24 @@ interface BoardProps {
 }
 
 const TOKEN_GRADIENT: Record<PlayerColor, string> = {
-  red: "radial-gradient(circle at 32% 28%, #ff8a8a, #E5383B 55%, #A4161A 100%)",
-  blue: "radial-gradient(circle at 32% 28%, #6fb1ff, #1B6FD6 55%, #0B3D91 100%)",
-  green: "radial-gradient(circle at 32% 28%, #79e09a, #2DA84F 55%, #157535 100%)",
-  yellow: "radial-gradient(circle at 32% 28%, #ffe082, #F5B400 55%, #B8860B 100%)",
+  red: "radial-gradient(circle at 35% 25%, #ffb3b3 0%, #f15c5c 30%, #D8262A 65%, #8C1014 100%)",
+  blue: "radial-gradient(circle at 35% 25%, #aed4ff 0%, #4f9bff 30%, #1457B8 65%, #06286B 100%)",
+  green: "radial-gradient(circle at 35% 25%, #a8eebd 0%, #4fcc7a 30%, #1F9248 65%, #0E5C28 100%)",
+  yellow: "radial-gradient(circle at 35% 25%, #ffefb0 0%, #ffd24d 30%, #E0A100 65%, #8C6300 100%)",
+};
+
+const TOKEN_RING: Record<PlayerColor, string> = {
+  red: "#8C1014",
+  blue: "#06286B",
+  green: "#0E5C28",
+  yellow: "#8C6300",
 };
 
 const CORNER_GRADIENT: Record<PlayerColor, string> = {
-  red: "linear-gradient(135deg, #ff5a5a 0%, #c41e1e 100%)",
-  blue: "linear-gradient(135deg, #4f9bff 0%, #0d4fb0 100%)",
-  green: "linear-gradient(135deg, #4fd47b 0%, #15823f 100%)",
-  yellow: "linear-gradient(135deg, #ffd54f 0%, #d99b00 100%)",
+  red: "linear-gradient(135deg, #ff6b6b 0%, #C41E1E 55%, #8C1014 100%)",
+  blue: "linear-gradient(135deg, #5fa8ff 0%, #0D4FB0 55%, #06286B 100%)",
+  green: "linear-gradient(135deg, #5fdb8a 0%, #15823F 55%, #0E5C28 100%)",
+  yellow: "linear-gradient(135deg, #ffdb6b 0%, #D99B00 55%, #8C6300 100%)",
 };
 
 const PATH_TINT: Record<PlayerColor, string> = {
@@ -85,18 +92,22 @@ function TokenPiece({
     <button
       onClick={onClick}
       aria-label={`${color} token`}
-      className={`token-pop relative rounded-full border-2 border-white/90 ${
-        small ? "h-[60%] w-[60%]" : "h-[72%] w-[72%]"
+      className={`token-pop relative rounded-full ${
+        small ? "h-[58%] w-[58%]" : "h-[74%] w-[74%]"
       } ${isSelectable ? "cursor-pointer pulse-ring" : "cursor-default"}`}
       style={{
         background: TOKEN_GRADIENT[color],
+        border: `2px solid ${TOKEN_RING[color]}`,
         boxShadow:
-          "0 2px 0 rgba(0,0,0,0.4), 0 3px 5px rgba(0,0,0,0.45), inset 0 1px 2px rgba(255,255,255,0.6)",
+          "0 2px 0 rgba(0,0,0,0.45), 0 3px 6px rgba(0,0,0,0.5), inset 0 -3px 4px rgba(0,0,0,0.25), inset 0 2px 3px rgba(255,255,255,0.7)",
       }}
     >
       <span
-        className="absolute left-1/2 top-[22%] h-[28%] w-[28%] -translate-x-1/2 rounded-full"
-        style={{ background: "rgba(255,255,255,0.55)" }}
+        className="absolute left-1/2 top-[18%] h-[26%] w-[26%] -translate-x-1/2 rounded-full"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.15) 100%)",
+        }}
       />
     </button>
   );
@@ -155,22 +166,47 @@ function renderCell(
     else if (row === 7 && col === 8) triColor = "green";
     else if (row === 8 && col === 7) triColor = "yellow";
     else if (row === 7 && col === 6) triColor = "red";
+    const isCenter = row === 7 && col === 7;
     return (
       <div
         key={`${row}-${col}`}
         className={cellBase}
-        style={{ background: CORNER_GRADIENT[triColor] }}
-      />
+        style={{
+          background: CORNER_GRADIENT[triColor],
+          boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.15)",
+        }}
+      >
+        {isCenter && (
+          <i
+            className="ti ti-star-filled text-[16px] text-white drop-shadow"
+            aria-hidden="true"
+          />
+        )}
+      </div>
     );
   }
 
   if (homeStretchColor) {
+    const colIdx = PLAYER_HOME_COLUMN[homeStretchColor].findIndex(
+      (p) => p.row === row && p.col === col
+    );
     return (
       <div
         key={`${row}-${col}`}
         className={`${cellBase} border-[0.5px] border-black/10`}
-        style={{ background: PATH_TINT[homeStretchColor] }}
+        style={{
+          background: PATH_TINT[homeStretchColor],
+          boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.4)",
+        }}
       >
+        {tokens.length === 0 && (
+          <span
+            className="text-[9px] font-bold opacity-25"
+            style={{ color: "#000" }}
+          >
+            {colIdx + 1}
+          </span>
+        )}
         {tokens.map((t, i) => (
           <div
             key={`${t.color}-${t.token.id}`}
@@ -195,26 +231,28 @@ function renderCell(
       <div
         key={`${row}-${col}`}
         className={`${cellBase} border-[0.5px] border-black/10`}
-        style={{ background: bgColor }}
+        style={{
+          background: bgColor,
+          boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.4)",
+        }}
       >
         {isSafe && (
           <i
-            className="ti ti-shield-star absolute text-[12px] opacity-40"
-            style={{ color: startColor ? "#000" : "#B8860B" }}
+            className="ti ti-shield-star-filled absolute text-[13px] opacity-35"
+            style={{ color: startColor ? "#5A1A1A" : "#8C6300" }}
             aria-hidden="true"
           />
         )}
         {tokens.length > 0 && (
-          <div className="flex h-full w-full flex-wrap items-center justify-center">
+          <div className="grid h-full w-full grid-cols-2 grid-rows-2 place-items-center p-[3%]">
             {tokens.slice(0, 4).map((t) => (
-              <div key={`${t.color}-${t.token.id}`} className="h-1/2 w-1/2 p-[6%]">
-                <TokenPiece
-                  color={t.color}
-                  isSelectable={selectableTokens.includes(t.token.id)}
-                  onClick={() => onTokenClick(t.token.id)}
-                  small={tokens.length > 1}
-                />
-              </div>
+              <TokenPiece
+                key={`${t.color}-${t.token.id}`}
+                color={t.color}
+                isSelectable={selectableTokens.includes(t.token.id)}
+                onClick={() => onTokenClick(t.token.id)}
+                small={tokens.length > 1}
+              />
             ))}
           </div>
         )}
@@ -230,10 +268,11 @@ function renderCell(
         style={{ background: PATH_TINT[homeBaseColor] }}
       >
         <div
-          className="flex h-[82%] w-[82%] items-center justify-center rounded-full"
+          className="grid h-[84%] w-[84%] grid-cols-2 grid-rows-2 place-items-center gap-[6%] rounded-2xl p-[8%]"
           style={{
-            background: "rgba(255,255,255,0.6)",
-            boxShadow: "inset 0 2px 5px rgba(0,0,0,0.2)",
+            background: "rgba(255,255,255,0.55)",
+            boxShadow:
+              "inset 0 3px 8px rgba(0,0,0,0.22), inset 0 -1px 0 rgba(255,255,255,0.5)",
           }}
         >
           {tokens.map((t) => (
@@ -284,10 +323,11 @@ export default function Board({ gameState, onTokenClick, selectableTokens }: Boa
 
   return (
     <div
-      className="overflow-hidden rounded-2xl border-[3px] border-amber-200"
+      className="overflow-hidden rounded-2xl"
       style={{
+        border: "4px solid #D99B00",
         boxShadow:
-          "0 14px 30px rgba(0,0,0,0.45), inset 0 0 0 2px rgba(255,255,255,0.5)",
+          "0 16px 34px rgba(0,0,0,0.5), 0 4px 0 rgba(0,0,0,0.25), inset 0 0 0 2px rgba(255,255,255,0.55), inset 0 0 0 6px rgba(217,155,0,0.25)",
       }}
     >
       <div

@@ -62,15 +62,27 @@ function DiceFace({
   const dots = DOT_POSITIONS[value];
   return (
     <div
-      style={style}
-      className="absolute flex h-full w-full items-center justify-center rounded-xl border-[3px] border-amber-100 bg-white"
+      style={{
+        ...style,
+        pointerEvents: "none",
+        background: "linear-gradient(165deg, #ffffff 0%, #f3ebd9 100%)",
+        boxShadow:
+          "inset 0 2px 3px rgba(255,255,255,0.9), inset 0 -3px 5px rgba(0,0,0,0.08)",
+      }}
+      className="absolute flex h-full w-full items-center justify-center rounded-xl border-[3px] border-amber-100"
     >
       <div className="relative h-full w-full p-[12%]">
         {dots.map((pos, i) => (
           <div
             key={i}
-            className="absolute h-[22%] w-[22%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-ludo-felt shadow-sm"
-            style={{ left: `${pos[0]}%`, top: `${pos[1]}%` }}
+            className="absolute h-[22%] w-[22%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{
+              left: `${pos[0]}%`,
+              top: `${pos[1]}%`,
+              background:
+                "radial-gradient(circle at 35% 30%, #1d3a52 0%, #0a1f33 70%)",
+              boxShadow: "0 1px 1px rgba(0,0,0,0.4)",
+            }}
           />
         ))}
       </div>
@@ -140,38 +152,48 @@ export default function Dice({ value, rolling, disabled, onRoll }: DiceProps) {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <button
-        onClick={onRoll}
-        disabled={disabled || rolling}
-        aria-label="Roll dice"
-        className={`group relative h-20 w-20 transition-all duration-200 ${
-          disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-        } ${showRoll ? "hover:scale-105" : ""}`}
-        style={{ perspective: "600px" }}
+      <div
+        className="relative flex h-24 w-24 items-center justify-center rounded-2xl"
+        style={{
+          background: "linear-gradient(180deg, #1a4a73 0%, #0c2945 100%)",
+          boxShadow:
+            "inset 0 2px 4px rgba(255,255,255,0.15), inset 0 -3px 6px rgba(0,0,0,0.35), 0 3px 0 #051320",
+        }}
       >
-        <div
-          className="relative h-full w-full"
-          style={{
-            transformStyle: "preserve-3d",
-            transform: displayTransform,
-            transition: hasSettled
-              ? "transform 1.2s cubic-bezier(0.22, 1, 0.36, 1)"
-              : "none",
-          }}
+        <button
+          onClick={onRoll}
+          disabled={disabled || rolling}
+          aria-label="Roll dice"
+          className={`group relative h-20 w-20 transition-all duration-200 ${
+            disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+          } ${showRoll ? "hover:scale-105" : ""}`}
+          style={{ perspective: "600px" }}
         >
-          <DiceFace value={1} style={{ transform: "translateZ(40px)" }} />
-          <DiceFace value={6} style={{ transform: "rotateY(180deg) translateZ(40px)" }} />
-          <DiceFace value={2} style={{ transform: "rotateY(90deg) translateZ(40px)" }} />
-          <DiceFace value={5} style={{ transform: "rotateY(-90deg) translateZ(40px)" }} />
-          <DiceFace value={3} style={{ transform: "rotateX(90deg) translateZ(40px)" }} />
-          <DiceFace value={4} style={{ transform: "rotateX(-90deg) translateZ(40px)" }} />
-        </div>
-        <div
-          className={`pointer-events-none absolute -bottom-1 left-1/2 h-2 w-16 -translate-x-1/2 rounded-full bg-black/30 blur-sm transition-all duration-700 ${
-            isAnimating ? "scale-75 opacity-50" : "scale-100 opacity-80"
-          }`}
-        />
-      </button>
+          <div
+            className="relative h-full w-full"
+            style={{
+              transformStyle: "preserve-3d",
+              transform: displayTransform,
+              transition: hasSettled
+                ? "transform 1.2s cubic-bezier(0.22, 1, 0.36, 1)"
+                : "none",
+              pointerEvents: "none",
+            }}
+          >
+            <DiceFace value={1} style={{ transform: "translateZ(40px)" }} />
+            <DiceFace value={6} style={{ transform: "rotateY(180deg) translateZ(40px)" }} />
+            <DiceFace value={2} style={{ transform: "rotateY(90deg) translateZ(40px)" }} />
+            <DiceFace value={5} style={{ transform: "rotateY(-90deg) translateZ(40px)" }} />
+            <DiceFace value={3} style={{ transform: "rotateX(90deg) translateZ(40px)" }} />
+            <DiceFace value={4} style={{ transform: "rotateX(-90deg) translateZ(40px)" }} />
+          </div>
+          <div
+            className={`pointer-events-none absolute -bottom-1 left-1/2 h-2 w-16 -translate-x-1/2 rounded-full bg-black/40 blur-sm transition-all duration-700 ${
+              isAnimating ? "scale-75 opacity-50" : "scale-100 opacity-90"
+            }`}
+          />
+        </button>
+      </div>
       {showRoll && (
         <span className="text-xs font-bold text-amber-300 drop-shadow">
           Tap to roll
