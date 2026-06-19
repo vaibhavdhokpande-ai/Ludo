@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 const QUAD_COLORS = [
   { bg: "#E5383B", token: "radial-gradient(circle at 35% 25%, #ffb3b3 0%, #f15c5c 30%, #D8262A 65%, #8C1014 100%)" },
@@ -25,17 +26,20 @@ function MiniTokenIcon({ gradient, ring }: { gradient: string; ring: string }) {
 
 export default function HomePage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [showLogin, setShowLogin] = useState(false);
   const [name, setName] = useState("");
   const coinBalance = 2500;
+
+  const isLoading = status === "loading";
+  const isSignedIn = status === "authenticated";
 
   const handlePlay = () => {
     router.push("/play");
   };
 
-  const handleSocialLogin = (_provider: "google" | "facebook") => {
-    // UI-only stub — wire up real OAuth later
-    router.push("/play");
+  const handleSocialLogin = (provider: "google" | "facebook") => {
+    signIn(provider, { callbackUrl: "/play" });
   };
 
   const handleGuestPlay = () => {
@@ -66,8 +70,43 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* top bar: coin balance */}
-      <div className="z-10 flex w-full max-w-md items-center justify-end">
+      {/* top bar: profile (if signed in) + coin balance */}
+      <div className="z-10 flex w-full max-w-md items-center justify-between">
+        {isSignedIn && session?.user ? (
+          <div
+            className="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 xs:pr-4"
+            style={{
+              background: "rgba(255,255,255,0.1)",
+              boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.15)",
+            }}
+          >
+            {session.user.image ? (
+              <img
+                src={session.user.image}
+                alt={session.user.name ?? "Profile"}
+                className="h-7 w-7 rounded-full border-2 border-white/40 xs:h-8 xs:w-8"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 text-xs font-extrabold text-amber-900 xs:h-8 xs:w-8">
+                {session.user.name?.charAt(0).toUpperCase() ?? "U"}
+              </div>
+            )}
+            <span className="max-w-[90px] truncate text-xs font-bold text-white xs:max-w-[120px] xs:text-sm">
+              {session.user.name}
+            </span>
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              aria-label="Sign out"
+              className="ml-1 text-white/50 transition-colors hover:text-white"
+            >
+              <i className="ti ti-logout text-[15px]" aria-hidden="true" />
+            </button>
+          </div>
+        ) : (
+          <div />
+        )}
+
         <div
           className="flex items-center gap-2 rounded-full px-3 py-1.5 xs:px-4 xs:py-2"
           style={{
@@ -120,7 +159,11 @@ export default function HomePage() {
           Play Now
         </button>
 
-        {!showLogin ? (
+        {isLoading ? (
+          <span className="text-sm font-semibold text-amber-200/60">
+            Checking session…
+          </span>
+        ) : isSignedIn ? null : !showLogin ? (
           <button
             onClick={() => setShowLogin(true)}
             className="text-sm font-bold text-amber-200/90 underline-offset-4 hover:underline xs:text-base"

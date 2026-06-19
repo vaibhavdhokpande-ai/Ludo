@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import AuthProvider from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
   title: "Ludo — Play Online",
@@ -37,7 +38,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans" style={{ fontFamily: "Nunito, sans-serif" }}>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
