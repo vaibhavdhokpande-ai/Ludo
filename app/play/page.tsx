@@ -83,16 +83,24 @@ export default function Home() {
 
   return (
     <main
-      className="relative flex min-h-screen items-start justify-center overflow-y-auto p-2 xs:p-3 sm:p-6 lg:items-center"
+      className="relative flex h-[100dvh] w-screen items-center justify-center overflow-hidden p-2 xs:p-3 sm:p-4 lg:p-6"
       style={{
         background:
           "radial-gradient(circle at 50% 0%, #15436b 0%, #0a1f33 55%, #061320 100%)",
       }}
     >
-      <div className="flex w-full max-w-md flex-col items-center gap-2 xs:gap-3 sm:max-w-lg lg:max-w-xl lg:flex-row lg:items-start lg:gap-6 lg:max-w-4xl">
-        <div className="flex w-full flex-col items-center gap-2 xs:gap-3 lg:flex-1">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.07]"
+        style={{
+          backgroundImage:
+            "repeating-conic-gradient(#ffffff 0deg 90deg, transparent 90deg 180deg)",
+          backgroundSize: "56px 56px",
+        }}
+      />
+      <div className="flex h-full w-full max-w-md flex-col items-center justify-center gap-1.5 xs:gap-2 sm:max-w-lg sm:gap-3 lg:h-auto lg:max-h-full lg:max-w-6xl lg:flex-row lg:gap-8">
+        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-1.5 xs:gap-2 sm:gap-3 lg:w-auto lg:flex-1 lg:max-w-[700px]">
           <div
-            className="flex w-full items-center justify-between rounded-2xl px-3 py-2 xs:px-4 xs:py-3"
+            className="flex w-full flex-shrink-0 items-center justify-between rounded-2xl px-3 py-1.5 xs:px-4 xs:py-2.5"
             style={{
               background: "linear-gradient(180deg, #F5B400 0%, #C98A00 100%)",
               boxShadow: "0 4px 0 #8a5e00, 0 6px 14px rgba(0,0,0,0.4)",
@@ -106,7 +114,7 @@ export default function Home() {
               >
                 <i className="ti ti-home text-[15px] text-white xs:text-[17px]" aria-hidden="true" />
               </button>
-              <h1 className="text-stroke font-display text-lg font-extrabold text-white xs:text-xl sm:text-2xl">
+              <h1 className="text-stroke font-display text-base font-extrabold text-white xs:text-lg sm:text-xl">
                 Ludo
               </h1>
             </div>
@@ -120,18 +128,23 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="w-full max-w-[min(92vw,75vh,520px)] sm:max-w-[min(80vw,75vh,520px)] lg:max-w-[min(45vw,80vh,560px)]">
-            <Board
-              gameState={gameState}
-              onTokenClick={handleTokenClick}
-              selectableTokens={selectableTokens}
-            />
+          <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+            <div className="aspect-square h-full max-h-full w-full max-w-full lg:h-full lg:w-auto">
+              <Board
+                gameState={gameState}
+                onTokenClick={handleTokenClick}
+                selectableTokens={selectableTokens}
+                playerNames={Object.fromEntries(
+                  gameState.players.map((p) => [p.color, p.name])
+                )}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex w-full flex-col items-center gap-2 xs:gap-3 lg:w-64 lg:flex-shrink-0">
+        <div className="flex w-full flex-shrink-0 flex-col items-center gap-1.5 xs:gap-2 sm:gap-3 lg:w-72">
           <div
-            className="flex w-full items-center justify-between rounded-2xl px-3 py-2 xs:px-4 xs:py-3"
+            className="flex w-full items-center justify-between rounded-2xl px-3 py-1.5 xs:px-4 xs:py-2.5"
             style={{
               background: "linear-gradient(180deg, #123a5e 0%, #0c2945 100%)",
               boxShadow: "0 4px 0 #051320, 0 6px 14px rgba(0,0,0,0.4)",
