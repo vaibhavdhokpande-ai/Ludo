@@ -163,8 +163,8 @@ function renderCell(
   const isMidCol = col >= 6 && col <= 8;
   if (isMidRow && isMidCol) {
     let triColor: PlayerColor = "red";
-    if (row === 6 && col === 7) triColor = "blue";
-    else if (row === 7 && col === 8) triColor = "green";
+    if (row === 6 && col === 7) triColor = "green";
+    else if (row === 7 && col === 8) triColor = "blue";
     else if (row === 8 && col === 7) triColor = "yellow";
     else if (row === 7 && col === 6) triColor = "red";
     const isCenter = row === 7 && col === 7;
@@ -296,9 +296,9 @@ function renderCell(
 
   let quadColor: PlayerColor | null = null;
   if (isTopLeft) quadColor = "red";
-  else if (isTopRight) quadColor = "blue";
-  else if (isBottomRight) quadColor = "green";
-  else if (isBottomLeft) quadColor = "yellow";
+  else if (isTopRight) quadColor = "green";
+  else if (isBottomRight) quadColor = "yellow";
+  else if (isBottomLeft) quadColor = "blue";
 
   return (
     <div
@@ -311,11 +311,14 @@ function renderCell(
   );
 }
 
-const QUADRANT_LABEL_POS: Record<PlayerColor, { top: string; left: string }> = {
-  red: { top: "31.5%", left: "16%" },
-  blue: { top: "31.5%", left: "84%" },
-  green: { top: "68.5%", left: "84%" },
-  yellow: { top: "68.5%", left: "16%" },
+const QUADRANT_LABEL_POS: Record<
+  PlayerColor,
+  { top: string; left: string; translateY: string }
+> = {
+  red: { top: "11%", left: "20%", translateY: "-50%" },
+  green: { top: "11%", left: "80%", translateY: "-50%" },
+  yellow: { top: "89%", left: "80%", translateY: "-50%" },
+  blue: { top: "89%", left: "20%", translateY: "-50%" },
 };
 
 export default function Board({
@@ -364,12 +367,12 @@ export default function Board({
           return (
             <span
               key={color}
-              className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full px-[6%] py-[1.5%] font-display text-[clamp(8px,2.4vw,15px)] font-extrabold uppercase tracking-wide text-white"
+              className="text-stroke pointer-events-none absolute -translate-x-1/2 whitespace-nowrap font-display text-[clamp(9px,2.6vw,15px)] font-extrabold text-white"
               style={{
                 top: pos.top,
                 left: pos.left,
-                background: "rgba(0,0,0,0.28)",
-                textShadow: "0 1px 2px rgba(0,0,0,0.6)",
+                transform: `translate(-50%, ${pos.translateY})`,
+                textShadow: "0 1px 2px rgba(0,0,0,0.5)",
               }}
             >
               {label}
