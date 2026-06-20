@@ -48,12 +48,21 @@ export default function HomePage() {
 
   return (
     <main
-      className="relative flex min-h-screen flex-col items-center justify-between overflow-hidden p-4 xs:p-6"
+      className="relative flex h-[100dvh] flex-col items-center justify-between overflow-hidden p-4 xs:p-6"
       style={{
         background:
           "radial-gradient(circle at 50% -10%, #1d5a8c 0%, #0a1f33 55%, #050f1a 100%)",
       }}
     >
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.07]"
+        style={{
+          backgroundImage:
+            "repeating-conic-gradient(#ffffff 0deg 90deg, transparent 90deg 180deg)",
+          backgroundSize: "56px 56px",
+        }}
+      />
+
       {/* decorative floating tokens in background */}
       <div className="pointer-events-none absolute inset-0 opacity-20">
         {QUAD_COLORS.map((c, i) => (
@@ -131,31 +140,31 @@ export default function HomePage() {
       </div>
 
       {/* center: logo + tagline */}
-      <div className="z-10 flex flex-col items-center gap-2">
+      <div className="z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5 xs:gap-2">
         <div className="flex items-center gap-1">
           {QUAD_COLORS.map((c, i) => (
             <MiniTokenIcon key={i} gradient={c.token} ring={c.bg} />
           ))}
         </div>
-        <h1 className="text-stroke font-display text-5xl font-extrabold text-white xs:text-6xl sm:text-7xl">
+        <h1 className="text-stroke font-display text-4xl font-extrabold text-white xs:text-5xl sm:text-6xl lg:text-7xl">
           Ludo
         </h1>
-        <p className="text-sm font-semibold text-amber-200/80 xs:text-base">
+        <p className="text-xs font-semibold text-amber-200/80 xs:text-sm sm:text-base">
           Roll. Race. Win.
         </p>
       </div>
 
       {/* bottom: play button + auth */}
-      <div className="z-10 flex w-full max-w-sm flex-col items-center gap-3 xs:gap-4">
+      <div className="z-10 flex max-h-[55dvh] w-full max-w-sm flex-col items-center gap-2.5 overflow-y-auto xs:gap-3">
         <button
           onClick={handlePlay}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-lg font-extrabold text-white transition-transform active:scale-95 xs:py-4 xs:text-xl"
+          className="flex w-full flex-shrink-0 items-center justify-center gap-2 rounded-2xl py-3 text-base font-extrabold text-white transition-transform active:scale-95 xs:py-3.5 xs:text-lg sm:py-4 sm:text-xl"
           style={{
             background: "linear-gradient(180deg, #34C75C 0%, #1F9248 100%)",
             boxShadow: "0 5px 0 #0E5C28, 0 8px 18px rgba(0,0,0,0.4)",
           }}
         >
-          <i className="ti ti-player-play-filled text-[20px]" aria-hidden="true" />
+          <i className="ti ti-player-play-filled text-[18px] xs:text-[20px]" aria-hidden="true" />
           Play Now
         </button>
 
@@ -166,13 +175,13 @@ export default function HomePage() {
         ) : isSignedIn ? null : !showLogin ? (
           <button
             onClick={() => setShowLogin(true)}
-            className="text-sm font-bold text-amber-200/90 underline-offset-4 hover:underline xs:text-base"
+            className="flex-shrink-0 text-xs font-bold text-amber-200/90 underline-offset-4 hover:underline xs:text-sm sm:text-base"
           >
             Sign in to save progress
           </button>
         ) : (
           <div
-            className="flex w-full flex-col gap-2.5 rounded-2xl p-4 xs:gap-3"
+            className="flex w-full flex-shrink-0 flex-col gap-2 rounded-2xl p-3 xs:gap-2.5 xs:p-4"
             style={{
               background: "linear-gradient(180deg, #123a5e 0%, #0c2945 100%)",
               boxShadow:
