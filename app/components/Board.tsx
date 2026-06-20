@@ -17,6 +17,7 @@ interface BoardProps {
   gameState: GameState;
   onTokenClick: (tokenId: number) => void;
   selectableTokens: number[];
+  playerNames?: Partial<Record<PlayerColor, string>>;
 }
 
 const TOKEN_GRADIENT: Record<PlayerColor, string> = {
@@ -310,7 +311,19 @@ function renderCell(
   );
 }
 
-export default function Board({ gameState, onTokenClick, selectableTokens }: BoardProps) {
+const QUADRANT_LABEL_POS: Record<PlayerColor, { top: string; left: string }> = {
+  red: { top: "31.5%", left: "16%" },
+  blue: { top: "31.5%", left: "84%" },
+  green: { top: "68.5%", left: "84%" },
+  yellow: { top: "68.5%", left: "16%" },
+};
+
+export default function Board({
+  gameState,
+  onTokenClick,
+  selectableTokens,
+  playerNames,
+}: BoardProps) {
   const cells = useMemo(() => {
     const result: React.ReactNode[] = [];
     for (let r = 0; r < BOARD_SIZE; r++) {
@@ -323,11 +336,12 @@ export default function Board({ gameState, onTokenClick, selectableTokens }: Boa
 
   return (
     <div
-      className="overflow-hidden rounded-2xl"
+      className="relative mx-auto h-full max-h-full w-full max-w-full overflow-hidden rounded-2xl"
       style={{
         border: "4px solid #D99B00",
         boxShadow:
           "0 16px 34px rgba(0,0,0,0.5), 0 4px 0 rgba(0,0,0,0.25), inset 0 0 0 2px rgba(255,255,255,0.55), inset 0 0 0 6px rgba(217,155,0,0.25)",
+        aspectRatio: "1",
       }}
     >
       <div
@@ -335,12 +349,33 @@ export default function Board({ gameState, onTokenClick, selectableTokens }: Boa
         style={{
           gridTemplateColumns: `repeat(${BOARD_SIZE}, minmax(0, 1fr))`,
           width: "100%",
-          aspectRatio: "1",
+          height: "100%",
           background: "#FFFDF6",
         }}
       >
         {cells}
       </div>
+
+      {playerNames &&
+        TURN_ORDER.map((color) => {
+          const label = playerNames[color];
+          if (!label) return null;
+          const pos = QUADRANT_LABEL_POS[color];
+          return (
+            <span
+              key={color}
+              className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full px-[6%] py-[1.5%] font-display text-[clamp(8px,2.4vw,15px)] font-extrabold uppercase tracking-wide text-white"
+              style={{
+                top: pos.top,
+                left: pos.left,
+                background: "rgba(0,0,0,0.28)",
+                textShadow: "0 1px 2px rgba(0,0,0,0.6)",
+              }}
+            >
+              {label}
+            </span>
+          );
+        })}
     </div>
   );
 }
