@@ -66,16 +66,16 @@ export const SAFE_ZONE_INDICES = [11, 24, 37, 50];
 /** Each player's start position on the main path */
 export const PLAYER_START_POSITION: Record<PlayerColor, number> = {
   red: 0,
-  blue: 13,
-  green: 26,
+  green: 13,
+  blue: 26,
   yellow: 39,
 };
 
 /** The main path position where each player enters their home column */
 export const PLAYER_HOME_ENTRY: Record<PlayerColor, number> = {
   red: 51,
-  blue: 12,
-  green: 25,
+  green: 12,
+  blue: 25,
   yellow: 38,
 };
 
@@ -89,7 +89,7 @@ export const PLAYER_HOME_COLUMN: Record<PlayerColor, Position[]> = {
     { row: 7, col: 5 },
     { row: 7, col: 6 },
   ],
-  blue: [
+  green: [
     { row: 1, col: 7 },
     { row: 2, col: 7 },
     { row: 3, col: 7 },
@@ -97,7 +97,7 @@ export const PLAYER_HOME_COLUMN: Record<PlayerColor, Position[]> = {
     { row: 5, col: 7 },
     { row: 6, col: 7 },
   ],
-  green: [
+  blue: [
     { row: 7, col: 13 },
     { row: 7, col: 12 },
     { row: 7, col: 11 },
@@ -123,13 +123,13 @@ export const PLAYER_HOME_BASE: Record<PlayerColor, Position[]> = {
     { row: 4, col: 1 },
     { row: 4, col: 4 },
   ],
-  blue: [
+  green: [
     { row: 1, col: 10 },
     { row: 1, col: 13 },
     { row: 4, col: 10 },
     { row: 4, col: 13 },
   ],
-  green: [
+  blue: [
     { row: 10, col: 10 },
     { row: 10, col: 13 },
     { row: 13, col: 10 },
@@ -144,7 +144,7 @@ export const PLAYER_HOME_BASE: Record<PlayerColor, Position[]> = {
 };
 
 /** Turn order for players */
-export const TURN_ORDER: PlayerColor[] = ["red", "blue", "green", "yellow"];
+export const TURN_ORDER: PlayerColor[] = ["red", "green", "blue", "yellow"];
 
 /** Number of tokens per player */
 export const TOKENS_PER_PLAYER = 4;

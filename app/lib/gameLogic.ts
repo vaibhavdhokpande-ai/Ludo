@@ -27,22 +27,28 @@ export function createTokens(color: PlayerColor): Token[] {
 
 /** Create initial game state */
 export function createInitialGameState(): GameState {
+  const NAMES: Record<PlayerColor, string> = {
+    red: "Computer 2",
+    green: "Computer 3",
+    blue: "You",
+    yellow: "Computer 4",
+  };
   const players: Player[] = TURN_ORDER.map((color) => ({
     color,
-    name: color.charAt(0).toUpperCase() + color.slice(1),
+    name: NAMES[color],
     tokens: createTokens(color),
-    isHuman: true,
+    isHuman: color === "blue",
   }));
 
   return {
     players,
-    currentPlayerIndex: 0,
+    currentPlayerIndex: TURN_ORDER.indexOf("blue"),
     diceValue: null,
     diceRolled: false,
     canRollDice: true,
     winner: null,
     consecutiveSixes: 0,
-    message: "Red's turn. Roll the dice!",
+    message: "Your turn. Roll the dice!",
     turnPhase: "roll",
     selectedToken: null,
   };
@@ -51,6 +57,11 @@ export function createInitialGameState(): GameState {
 /** Get the current player */
 export function getCurrentPlayer(state: GameState): Player {
   return state.players[state.currentPlayerIndex];
+}
+
+/** Build a grammatically correct turn phrase, e.g. "Your turn" or "Computer 2's turn" */
+function turnPhrase(name: string): string {
+  return name === "You" ? "Your turn" : `${name}'s turn`;
 }
 
 /** Roll the dice (returns 1-6) */
@@ -82,8 +93,8 @@ export function getBoardPosition(
   if (state === "home") {
     const bases: Record<PlayerColor, { row: number; col: number }[]> = {
       red: [{ row: 1, col: 1 }, { row: 1, col: 4 }, { row: 4, col: 1 }, { row: 4, col: 4 }],
-      blue: [{ row: 1, col: 10 }, { row: 1, col: 13 }, { row: 4, col: 10 }, { row: 4, col: 13 }],
-      green: [{ row: 10, col: 10 }, { row: 10, col: 13 }, { row: 13, col: 10 }, { row: 13, col: 13 }],
+      green: [{ row: 1, col: 10 }, { row: 1, col: 13 }, { row: 4, col: 10 }, { row: 4, col: 13 }],
+      blue: [{ row: 10, col: 10 }, { row: 10, col: 13 }, { row: 13, col: 10 }, { row: 13, col: 13 }],
       yellow: [{ row: 10, col: 1 }, { row: 10, col: 4 }, { row: 13, col: 1 }, { row: 13, col: 4 }],
     };
     return bases[color][tokenId];
@@ -100,8 +111,8 @@ export function getBoardPosition(
   // finished - return center
   const centerPositions: Record<PlayerColor, { row: number; col: number }> = {
     red: { row: 7, col: 6 },
-    blue: { row: 6, col: 7 },
-    green: { row: 7, col: 8 },
+    green: { row: 6, col: 7 },
+    blue: { row: 7, col: 8 },
     yellow: { row: 8, col: 7 },
   };
   return centerPositions[color];
@@ -288,9 +299,9 @@ export function processDiceRoll(state: GameState): GameState {
   // Three 6s in a row = lose turn
   if (consecutiveSixes >= 3) {
     const nextIndex = getNextPlayerIndex(state.currentPlayerIndex);
-    const nextPlayer = TURN_ORDER[nextIndex];
+    const nextPlayerName = state.players[nextIndex].name;
     newState.consecutiveSixes = 0;
-    newState.message = `${getCurrentPlayer(state).name} rolled three 6s! Turn lost. ${nextPlayer.charAt(0).toUpperCase() + nextPlayer.slice(1)}'s turn.`;
+    newState.message = `${getCurrentPlayer(state).name} rolled three 6s! Turn lost. ${turnPhrase(nextPlayerName)}.`;
     newState.currentPlayerIndex = nextIndex;
     newState.canRollDice = true;
     newState.diceRolled = false;
@@ -314,8 +325,8 @@ export function processDiceRoll(state: GameState): GameState {
       return newState;
     }
     const nextIndex = getNextPlayerIndex(state.currentPlayerIndex);
-    const nextPlayer = TURN_ORDER[nextIndex];
-    newState.message = `${player.name} rolled ${diceValue} but no tokens can move. ${nextPlayer.charAt(0).toUpperCase() + nextPlayer.slice(1)}'s turn.`;
+    const nextPlayerName = state.players[nextIndex].name;
+    newState.message = `${player.name} rolled ${diceValue} but no tokens can move. ${turnPhrase(nextPlayerName)}.`;
     newState.currentPlayerIndex = nextIndex;
     newState.canRollDice = true;
     newState.diceRolled = false;
@@ -376,7 +387,11 @@ export function processTokenSelect(state: GameState, tokenId: number): GameState
             break;
           }
         }
-        newState.message = `${player.name} captured ${captured.color}'s token! ${player.name} gets another turn!`;
+        const capturedPlayerName =
+          newState.players.find((p) => p.color === captured.color)?.name ??
+          captured.color;
+        const verb = player.name === "You" ? "get" : "gets";
+        newState.message = `${player.name} captured ${capturedPlayerName}'s token! ${player.name} ${verb} another turn!`;
         newState.diceRolled = false;
         newState.diceValue = null;
         newState.turnPhase = "roll";
@@ -384,8 +399,10 @@ export function processTokenSelect(state: GameState, tokenId: number): GameState
 
         const winner = checkWinner(newState);
         if (winner) {
+          const winnerName =
+            newState.players.find((p) => p.color === winner)?.name ?? winner;
           newState.winner = winner;
-          newState.message = `${winner.charAt(0).toUpperCase() + winner.slice(1)} wins the game! 🎉`;
+          newState.message = `${winnerName} wins the game! 🎉`;
           newState.turnPhase = "roll";
           newState.canRollDice = true;
         }
@@ -397,8 +414,10 @@ export function processTokenSelect(state: GameState, tokenId: number): GameState
   // Check winner
   const winner = checkWinner(newState);
   if (winner) {
+    const winnerName =
+      newState.players.find((p) => p.color === winner)?.name ?? winner;
     newState.winner = winner;
-    newState.message = `${winner.charAt(0).toUpperCase() + winner.slice(1)} wins the game! 🎉`;
+    newState.message = `${winnerName} wins the game! 🎉`;
     newState.turnPhase = "roll";
     newState.canRollDice = true;
     return newState;
@@ -411,18 +430,21 @@ export function processTokenSelect(state: GameState, tokenId: number): GameState
     newState.diceValue = null;
     newState.turnPhase = "roll";
     newState.canRollDice = true;
-    newState.message = `${player.name} gets another turn! Roll again.`;
+    newState.message =
+      player.name === "You"
+        ? "You get another turn! Roll again."
+        : `${player.name} gets another turn! Roll again.`;
   } else {
     // Next player's turn
     const nextIndex = getNextPlayerIndex(state.currentPlayerIndex);
-    const nextPlayer = TURN_ORDER[nextIndex];
+    const nextPlayerName = state.players[nextIndex].name;
     newState.currentPlayerIndex = nextIndex;
     newState.diceRolled = false;
     newState.diceValue = null;
     newState.turnPhase = "roll";
     newState.canRollDice = true;
     newState.consecutiveSixes = 0;
-    newState.message = `${nextPlayer.charAt(0).toUpperCase() + nextPlayer.slice(1)}'s turn. Roll the dice!`;
+    newState.message = `${turnPhrase(nextPlayerName)}. Roll the dice!`;
   }
 
   return newState;
@@ -436,4 +458,55 @@ export function tryAutoSelect(state: GameState): GameState | null {
     return processTokenSelect(state, movable[0]);
   }
   return null;
+}
+
+/**
+ * Choose the best token for a bot (computer) player to move.
+ * Priority: capture an opponent > finish a token > bring a token out of home > advance the furthest token.
+ */
+export function chooseBotTokenId(state: GameState): number | null {
+  const player = getCurrentPlayer(state);
+  const diceValue = state.diceValue;
+  if (diceValue === null) return null;
+
+  const movable = player.tokens.filter((t) =>
+    canTokenMove(t, player.color, diceValue)
+  );
+  if (movable.length === 0) return null;
+  if (movable.length === 1) return movable[0].id;
+
+  // 1. Prefer a move that captures an opponent token
+  for (const token of movable) {
+    if (token.state === "path") {
+      const result = moveToken(token, player.color, diceValue);
+      if (result.state === "path") {
+        const mainIndex = getMainPathIndex(player.color, result.pathPos);
+        const captured = checkCapture(state, player.color, mainIndex);
+        if (captured) return token.id;
+      }
+    }
+  }
+
+  // 2. Prefer a move that finishes a token
+  for (const token of movable) {
+    const result = moveToken(token, player.color, diceValue);
+    if (result.state === "finished") return token.id;
+  }
+
+  // 3. Prefer bringing a new token out of home (on a 6)
+  const fromHome = movable.find((t) => t.state === "home");
+  if (fromHome) return fromHome.id;
+
+  // 4. Otherwise advance the token that is furthest along
+  let best = movable[0];
+  let bestProgress = -1;
+  for (const token of movable) {
+    const progress =
+      token.state === "homeStretch" ? 52 + token.pathPos : token.pathPos;
+    if (progress > bestProgress) {
+      bestProgress = progress;
+      best = token;
+    }
+  }
+  return best.id;
 }
