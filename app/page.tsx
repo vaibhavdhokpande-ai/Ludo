@@ -1,254 +1,273 @@
-"use client";
+'use client';
+import { useState, useEffect } from 'react';
+import styles from './page.module.css';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useSession, signIn, signOut } from "next-auth/react";
+export default function Home() {
+  const [diceValue, setDiceValue] = useState(0);
+  const [isRolling, setIsRolling] = useState(false);
+  const [message, setMessage] = useState('Apni baari kheliye!');
+  
+  const players = [
+    { name: 'Red (Aap)', color: '#ff4d4d', isBot: false },
+    { name: 'Green (Bot)', color: '#4dff4d', isBot: true },
+    { name: 'Yellow (Bot)', color: '#ffff4d', isBot: true },
+    { name: 'Blue (Bot)', color: '#4d4dff', isBot: true }
+  ];
 
-const QUAD_COLORS = [
-  { bg: "#E5383B", token: "radial-gradient(circle at 35% 25%, #ffb3b3 0%, #f15c5c 30%, #D8262A 65%, #8C1014 100%)" },
-  { bg: "#1B6FD6", token: "radial-gradient(circle at 35% 25%, #aed4ff 0%, #4f9bff 30%, #1457B8 65%, #06286B 100%)" },
-  { bg: "#2DA84F", token: "radial-gradient(circle at 35% 25%, #a8eebd 0%, #4fcc7a 30%, #1F9248 65%, #0E5C28 100%)" },
-  { bg: "#F5B400", token: "radial-gradient(circle at 35% 25%, #ffefb0 0%, #ffd24d 30%, #E0A100 65%, #8C6300 100%)" },
-];
+  const [currentPlayer, setCurrentPlayer] = useState(0);
+  const [winner, setWinner] = useState(null);
 
-function MiniTokenIcon({ gradient, ring }: { gradient: string; ring: string }) {
+  const [tokens, setTokens] = useState([
+    [-1, -1, -1, -1], 
+    [-1, -1, -1, -1], 
+    [-1, -1, -1, -1], 
+    [-1, -1, -1, -1]  
+  ]);
+
+  const BOARD_PATH = [
+    91, 76, 61, 46, 31, 16, 17, 18, 19, 20, 21, 36, 51, 66, 81, 96, 97, 98, 
+    83, 68, 53, 38, 23, 24, 25, 26, 27, 28, 29, 44, 59, 74, 89, 104, 119, 134, 
+    133, 132, 131, 130, 129, 143, 158, 173, 188, 203, 218, 217, 216, 201, 186, 
+    171, 156, 141, 126, 125, 124, 123, 122, 121, 120, 105, 90
+  ];
+
+  const START_POINTS = [0, 22, 35, 48];
+  const SAFE_ZONES = [0, 22, 35, 48, 8, 30, 43, 55];
+
+  // Dice Roll Function
+  const rollDice = () => {
+    if (isRolling || winner) return;
+    
+    setIsRolling(true);
+    setMessage('');
+    setTimeout(() => {
+      const randomNum = Math.floor(Math.random() * 6) + 1;
+      setDiceValue(randomNum);
+      setIsRolling(false);
+
+      let canMove = false;
+      for (let i = 0; i < 4; i++) {
+        if (tokens[currentPlayer][i] === -1 && randomNum === 6) canMove = true;
+        else if (tokens[currentPlayer][i] !== -1 && tokens[currentPlayer][i] + randomNum <= 63) canMove = true;
+      }
+
+      if (!canMove) {
+        setMessage(`Koi move nahi ho sakta. Turn pass!`);
+        setTimeout(() => {
+          setCurrentPlayer((prev) => (prev + 1) % 4);
+          setDiceValue(0);
+        }, 1500);
+      } else {
+        if (players[currentPlayer].isBot) {
+          setMessage('Bot soch raha hai...');
+        } else {
+          setMessage('Token select karein jo move kare!');
+        }
+      }
+    }, 500);
+  };
+
+  // Token Move Function
+  const handleTokenClick = (pIdx, tIdx) => {
+    if (pIdx !== currentPlayer || diceValue === 0 || isRolling || winner) return;
+
+    let currentPos = tokens[pIdx][tIdx];
+    let newPos;
+
+    if (currentPos === -1) {
+      if (diceValue === 6) newPos = START_POINTS[pIdx];
+      else return;
+    } else {
+      newPos = currentPos + diceValue;
+      if (newPos > 63) return;
+    }
+
+    let newTokens = tokens.map(p => [...p]);
+    newTokens[pIdx][tIdx] = newPos;
+    
+    let killed = false;
+
+    if (newPos !== 63 && !SAFE_ZONES.includes(newPos)) {
+      for (let i = 0; i < 4; i++) {
+        if (i !== pIdx) {
+          for (let j = 0; j < 4; j++) {
+            if (newTokens[i][j] !== -1 && BOARD_PATH[newTokens[i][j]] === BOARD_PATH[newPos]) {
+              newTokens[i][j] = -1;
+              killed = true;
+              setMessage(`Boom! ${players[pIdx].name} ne ${players[i].name} ka token cut kar diya!`);
+            }
+          }
+        }
+      }
+    }
+
+    setTokens(newTokens);
+
+    if (newTokens[pIdx].every(pos => pos === 63)) {
+      setWinner(pIdx);
+      setMessage(`🎉 ${players[pIdx].name} Jeet Gaya! 🎉`);
+      return;
+    }
+
+    if (diceValue !== 6 && !killed) {
+      setCurrentPlayer((prev) => (prev + 1) % 4);
+    } else {
+      setMessage(message + ' Ek aur baar roll karein!');
+    }
+
+    setDiceValue(0);
+  };
+
+  // AI Bot Logic (useEffect)
+  useEffect(() => {
+    // Agar current player bot hai, game chal raha hai, dice 0 hai, aur roll nahi ho raha
+    if (players[currentPlayer].isBot && !winner && diceValue === 0 && !isRolling) {
+      const timer = setTimeout(() => {
+        rollDice();
+      }, 1000); // 1 second baad bot dice roll karega
+      return () => clearTimeout(timer);
+    }
+
+    // Agar bot ne dice roll kar liya hai aur use move karna hai
+    if (players[currentPlayer].isBot && diceValue > 0 && !isRolling) {
+      const timer = setTimeout(() => {
+        // Bot ke valid moves nikalne
+        let validMoves = [];
+        for (let tIdx = 0; tIdx < 4; tIdx++) {
+          let pos = tokens[currentPlayer][tIdx];
+          if (pos === -1 && diceValue === 6) validMoves.push(tIdx);
+          else if (pos !== -1 && pos + diceValue <= 63) validMoves.push(tIdx);
+        }
+
+        if (validMoves.length > 0) {
+          // Simple AI Logic: Sabse aage wale token ko move karo, ya 6 aaye toh naye ko nikalo
+          let bestMove = validMoves[0];
+          let maxPos = -1;
+          
+          validMoves.forEach(tIdx => {
+            let pos = tokens[currentPlayer][tIdx];
+            // Priority 1: Agar 6 hai aur koi token ghar mein hai, toh use nikalo
+            if (diceValue === 6 && pos === -1) {
+              bestMove = tIdx;
+              return;
+            }
+            // Priority 2: Jo token sabse aage hai, usko aage badhao
+            if (pos > maxPos && pos !== -1) {
+              maxPos = pos;
+              bestMove = tIdx;
+            }
+          });
+
+          handleTokenClick(currentPlayer, bestMove);
+        }
+      }, 1000); // 1 second sochne ke baad move karega
+      return () => clearTimeout(timer);
+    }
+  }, [currentPlayer, diceValue, isRolling, winner, tokens]);
+
+  // Board Grid Code
+  const cells = [];
+  for (let i = 0; i < 225; i++) {
+    const row = Math.floor(i / 15) + 1;
+    const col = (i % 15) + 1;
+    let cellClass = styles.cell;
+
+    if (row <= 6 && col <= 6) cellClass += ` ${styles.redHomeArea}`;
+    else if (row <= 6 && col >= 10) cellClass += ` ${styles.greenHomeArea}`;
+    else if (row >= 10 && col <= 6) cellClass += ` ${styles.blueHomeArea}`;
+    else if (row >= 10 && col >= 10) cellClass += ` ${styles.yellowHomeArea}`;
+    else if (row >= 7 && row <= 9 && col >= 7 && col <= 9) cellClass += ` ${styles.centerArea}`;
+    else if (row === 8 && col >= 2 && col <= 6) cellClass += ` ${styles.redPath}`;
+    else if (col === 8 && row >= 2 && row <= 6) cellClass += ` ${styles.greenPath}`;
+    else if (col === 8 && row >= 10 && row <= 14) cellClass += ` ${styles.yellowPath}`;
+    else if (row === 8 && col >= 10 && col <= 14) cellClass += ` ${styles.bluePath}`;
+
+    let tokensInCell = [];
+    players.forEach((player, pIdx) => {
+      for (let tIdx = 0; tIdx < 4; tIdx++) {
+        let pos = tokens[pIdx][tIdx];
+        if (pos !== -1 && BOARD_PATH[pos] === i) {
+          let isMovable = pIdx === currentPlayer && diceValue > 0 && !isRolling && !player.isBot;
+          tokensInCell.push(
+            <div 
+              key={`${pIdx}-${tIdx}`} 
+              className={`${styles.token} ${isMovable ? styles.movableToken : ''}`}
+              style={{ backgroundColor: player.color }}
+              onClick={() => handleTokenClick(pIdx, tIdx)}
+            ></div>
+          );
+        }
+      }
+    });
+
+    cells.push(
+      <div key={i} className={cellClass}>
+        <div className={styles.tokenContainer}>{tokensInCell}</div>
+      </div>
+    );
+  }
+
+  // Yard Tokens
+  const renderYardTokens = (pIdx) => {
+    let yardTokens = [];
+    for (let tIdx = 0; tIdx < 4; tIdx++) {
+      if (tokens[pIdx][tIdx] === -1) {
+        let isMovable = pIdx === currentPlayer && diceValue === 6 && !isRolling && !winner && !players[pIdx].isBot;
+        yardTokens.push(
+          <div 
+            key={tIdx} 
+            className={`${styles.token} ${isMovable ? styles.movableToken : ''}`}
+            style={{ backgroundColor: players[pIdx].color }}
+            onClick={() => handleTokenClick(pIdx, tIdx)}
+          ></div>
+        );
+      }
+    }
+    return yardTokens;
+  };
+
+  const activeColor = players[currentPlayer].color;
+
   return (
-    <span
-      className="inline-block h-4 w-4 rounded-full"
-      style={{
-        background: gradient,
-        border: `1.5px solid ${ring}`,
-        boxShadow: "inset 0 1px 2px rgba(255,255,255,0.6)",
-      }}
-    />
-  );
-}
-
-export default function HomePage() {
-  const router = useRouter();
-  const { data: session, status } = useSession();
-  const [showLogin, setShowLogin] = useState(false);
-  const [name, setName] = useState("");
-  const coinBalance = 2500;
-
-  const isLoading = status === "loading";
-  const isSignedIn = status === "authenticated";
-
-  const handlePlay = () => {
-    router.push("/play");
-  };
-
-  const handleSocialLogin = (provider: "google" | "facebook") => {
-    signIn(provider, { callbackUrl: "/play" });
-  };
-
-  const handleGuestPlay = () => {
-    router.push("/play");
-  };
-
-  return (
-    <main
-      className="relative flex h-[100dvh] flex-col items-center justify-between overflow-hidden p-4 xs:p-6"
-      style={{
-        background:
-          "radial-gradient(circle at 50% -10%, #1d5a8c 0%, #0a1f33 55%, #050f1a 100%)",
-      }}
-    >
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.07]"
-        style={{
-          backgroundImage:
-            "repeating-conic-gradient(#ffffff 0deg 90deg, transparent 90deg 180deg)",
-          backgroundSize: "56px 56px",
-        }}
-      />
-
-      {/* decorative floating tokens in background */}
-      <div className="pointer-events-none absolute inset-0 opacity-20">
-        {QUAD_COLORS.map((c, i) => (
-          <div
-            key={i}
-            className="absolute h-10 w-10 rounded-full xs:h-14 xs:w-14"
-            style={{
-              background: c.token,
-              top: `${15 + i * 20}%`,
-              left: i % 2 === 0 ? "8%" : "82%",
-              filter: "blur(0.5px)",
-            }}
-          />
-        ))}
-      </div>
-
-      {/* top bar: profile (if signed in) + coin balance */}
-      <div className="z-10 flex w-full max-w-md items-center justify-between">
-        {isSignedIn && session?.user ? (
-          <div
-            className="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 xs:pr-4"
-            style={{
-              background: "rgba(255,255,255,0.1)",
-              boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.15)",
-            }}
-          >
-            {session.user.image ? (
-              <img
-                src={session.user.image}
-                alt={session.user.name ?? "Profile"}
-                className="h-7 w-7 rounded-full border-2 border-white/40 xs:h-8 xs:w-8"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 text-xs font-extrabold text-amber-900 xs:h-8 xs:w-8">
-                {session.user.name?.charAt(0).toUpperCase() ?? "U"}
-              </div>
-            )}
-            <span className="max-w-[90px] truncate text-xs font-bold text-white xs:max-w-[120px] xs:text-sm">
-              {session.user.name}
-            </span>
-            <button
-              onClick={() => signOut({ callbackUrl: "/" })}
-              aria-label="Sign out"
-              className="ml-1 text-white/50 transition-colors hover:text-white"
-            >
-              <i className="ti ti-logout text-[15px]" aria-hidden="true" />
-            </button>
-          </div>
-        ) : (
-          <div />
-        )}
-
-        <div
-          className="flex items-center gap-2 rounded-full px-3 py-1.5 xs:px-4 xs:py-2"
-          style={{
-            background: "linear-gradient(180deg, #F5B400 0%, #C98A00 100%)",
-            boxShadow: "0 3px 0 #8a5e00, 0 4px 10px rgba(0,0,0,0.35)",
-          }}
-        >
-          <span
-            className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold text-amber-900 xs:h-6 xs:w-6 xs:text-xs"
-            style={{
-              background:
-                "radial-gradient(circle at 35% 30%, #fff6d6 0%, #ffd24d 50%, #C98A00 100%)",
-              boxShadow: "inset 0 1px 2px rgba(255,255,255,0.8)",
-            }}
-          >
-            $
-          </span>
-          <span className="text-sm font-extrabold text-white xs:text-base">
-            {coinBalance.toLocaleString()}
-          </span>
+    <div className={styles.gameContainer}>
+      <h1>Ludo Web (Next.js)</h1>
+      
+      <div className={styles.mainWrapper}>
+        <div className={styles.board}>
+          <div className={styles.yardArea} style={{ top: '10px', left: '10px' }}>{renderYardTokens(0)}</div>
+          <div className={styles.yardArea} style={{ top: '10px', right: '10px' }}>{renderYardTokens(1)}</div>
+          <div className={styles.yardArea} style={{ bottom: '10px', left: '10px' }}>{renderYardTokens(2)}</div>
+          <div className={styles.yardArea} style={{ bottom: '10px', right: '10px' }}>{renderYardTokens(3)}</div>
+          
+          {cells}
         </div>
-      </div>
 
-      {/* center: logo + tagline */}
-      <div className="z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5 xs:gap-2">
-        <div className="flex items-center gap-1">
-          {QUAD_COLORS.map((c, i) => (
-            <MiniTokenIcon key={i} gradient={c.token} ring={c.bg} />
-          ))}
-        </div>
-        <h1 className="text-stroke font-display text-4xl font-extrabold text-white xs:text-5xl sm:text-6xl lg:text-7xl">
-          Ludo
-        </h1>
-        <p className="text-xs font-semibold text-amber-200/80 xs:text-sm sm:text-base">
-          Roll. Race. Win.
-        </p>
-      </div>
-
-      {/* bottom: play button + auth */}
-      <div className="z-10 flex max-h-[55dvh] w-full max-w-sm flex-col items-center gap-2.5 overflow-y-auto xs:gap-3">
-        <button
-          onClick={handlePlay}
-          className="flex w-full flex-shrink-0 items-center justify-center gap-2 rounded-2xl py-3 text-base font-extrabold text-white transition-transform active:scale-95 xs:py-3.5 xs:text-lg sm:py-4 sm:text-xl"
-          style={{
-            background: "linear-gradient(180deg, #34C75C 0%, #1F9248 100%)",
-            boxShadow: "0 5px 0 #0E5C28, 0 8px 18px rgba(0,0,0,0.4)",
-          }}
-        >
-          <i className="ti ti-player-play-filled text-[18px] xs:text-[20px]" aria-hidden="true" />
-          Play Now
-        </button>
-
-        {isLoading ? (
-          <span className="text-sm font-semibold text-amber-200/60">
-            Checking session…
-          </span>
-        ) : isSignedIn ? null : !showLogin ? (
-          <button
-            onClick={() => setShowLogin(true)}
-            className="flex-shrink-0 text-xs font-bold text-amber-200/90 underline-offset-4 hover:underline xs:text-sm sm:text-base"
-          >
-            Sign in to save progress
-          </button>
-        ) : (
-          <div
-            className="flex w-full flex-shrink-0 flex-col gap-2 rounded-2xl p-3 xs:gap-2.5 xs:p-4"
-            style={{
-              background: "linear-gradient(180deg, #123a5e 0%, #0c2945 100%)",
-              boxShadow:
-                "0 4px 0 #051320, 0 6px 14px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)",
-            }}
-          >
-            <button
-              onClick={() => handleSocialLogin("google")}
-              className="flex items-center justify-center gap-2.5 rounded-xl bg-white py-2.5 text-sm font-bold text-gray-700 transition-transform active:scale-95 xs:text-base"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-                <path
-                  fill="#4285F4"
-                  d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M3.97 10.72A5.4 5.4 0 0 1 3.69 9c0-.6.1-1.18.28-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.59-2.59C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"
-                />
-              </svg>
-              Continue with Google
-            </button>
-            <button
-              onClick={() => handleSocialLogin("facebook")}
-              className="flex items-center justify-center gap-2.5 rounded-xl py-2.5 text-sm font-bold text-white transition-transform active:scale-95 xs:text-base"
-              style={{ background: "#1877F2" }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="white" aria-hidden="true">
-                <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5 3.66 9.15 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.45 2.91h-2.33V22c4.78-.79 8.44-4.94 8.44-9.94z" />
-              </svg>
-              Continue with Facebook
-            </button>
-
-            <div className="flex items-center gap-2 py-1">
-              <div className="h-px flex-1 bg-white/15" />
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-white/40 xs:text-xs">
-                or
-              </span>
-              <div className="h-px flex-1 bg-white/15" />
+        <div className={styles.controls} style={{ borderColor: activeColor }}>
+          <h2 style={{ color: activeColor }}>
+            {winner ? `Winner: ${players[winner].name}` : `${players[currentPlayer].name} Ki Baari`}
+          </h2>
+          
+          <div className={styles.diceBox} style={{ backgroundColor: activeColor }}>
+            <div className={`${styles.dice} ${isRolling ? styles.rolling : ''}`}>
+              {isRolling ? '?' : (diceValue === 0 ? '-' : diceValue)}
             </div>
-
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
-              className="w-full rounded-xl border-2 border-white/10 bg-white/5 px-3.5 py-2.5 text-sm font-semibold text-white placeholder-white/40 outline-none focus:border-amber-300/60 xs:text-base"
-            />
-            <button
-              onClick={handleGuestPlay}
-              className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-amber-900 transition-transform active:scale-95 xs:text-base"
-              style={{
-                background: "linear-gradient(180deg, #F5B400 0%, #C98A00 100%)",
-              }}
-            >
-              Play as Guest
-            </button>
           </div>
-        )}
+          
+          {/* Button sirf human player ke liye dikhega active */}
+          <button 
+            className={styles.rollBtn} 
+            onClick={rollDice}
+            disabled={isRolling || diceValue > 0 || winner || players[currentPlayer].isBot}
+            style={{ backgroundColor: activeColor }}
+          >
+            {isRolling ? 'Rolling...' : 'Roll Dice'}
+          </button>
+          
+          <p className={styles.statusText}>
+            {message}
+          </p>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
