@@ -34,7 +34,6 @@ export default function Home() {
   const START_POINTS = [0, 22, 35, 48];
   const SAFE_ZONES = [0, 22, 35, 48, 8, 30, 43, 55];
 
-  // Dice Roll Function
   const rollDice = () => {
     if (isRolling || winner) return;
     
@@ -67,7 +66,6 @@ export default function Home() {
     }, 500);
   };
 
-  // Token Move Function
   const handleTokenClick = (pIdx, tIdx) => {
     if (pIdx !== currentPlayer || diceValue === 0 || isRolling || winner) return;
 
@@ -118,20 +116,16 @@ export default function Home() {
     setDiceValue(0);
   };
 
-  // AI Bot Logic (useEffect)
   useEffect(() => {
-    // Agar current player bot hai, game chal raha hai, dice 0 hai, aur roll nahi ho raha
     if (players[currentPlayer].isBot && !winner && diceValue === 0 && !isRolling) {
       const timer = setTimeout(() => {
         rollDice();
-      }, 1000); // 1 second baad bot dice roll karega
+      }, 1000);
       return () => clearTimeout(timer);
     }
 
-    // Agar bot ne dice roll kar liya hai aur use move karna hai
     if (players[currentPlayer].isBot && diceValue > 0 && !isRolling) {
       const timer = setTimeout(() => {
-        // Bot ke valid moves nikalne
         let validMoves = [];
         for (let tIdx = 0; tIdx < 4; tIdx++) {
           let pos = tokens[currentPlayer][tIdx];
@@ -140,18 +134,15 @@ export default function Home() {
         }
 
         if (validMoves.length > 0) {
-          // Simple AI Logic: Sabse aage wale token ko move karo, ya 6 aaye toh naye ko nikalo
           let bestMove = validMoves[0];
           let maxPos = -1;
           
           validMoves.forEach(tIdx => {
             let pos = tokens[currentPlayer][tIdx];
-            // Priority 1: Agar 6 hai aur koi token ghar mein hai, toh use nikalo
             if (diceValue === 6 && pos === -1) {
               bestMove = tIdx;
               return;
             }
-            // Priority 2: Jo token sabse aage hai, usko aage badhao
             if (pos > maxPos && pos !== -1) {
               maxPos = pos;
               bestMove = tIdx;
@@ -160,12 +151,11 @@ export default function Home() {
 
           handleTokenClick(currentPlayer, bestMove);
         }
-      }, 1000); // 1 second sochne ke baad move karega
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [currentPlayer, diceValue, isRolling, winner, tokens]);
 
-  // Board Grid Code
   const cells = [];
   for (let i = 0; i < 225; i++) {
     const row = Math.floor(i / 15) + 1;
@@ -207,7 +197,6 @@ export default function Home() {
     );
   }
 
-  // Yard Tokens
   const renderYardTokens = (pIdx) => {
     let yardTokens = [];
     for (let tIdx = 0; tIdx < 4; tIdx++) {
@@ -242,25 +231,26 @@ export default function Home() {
           {cells}
         </div>
 
+        {/* Dice aur Controls ko flex-direction column mein rakhne ke liye */}
         <div className={styles.controls} style={{ borderColor: activeColor }}>
           <h2 style={{ color: activeColor }}>
             {winner ? `Winner: ${players[winner].name}` : `${players[currentPlayer].name} Ki Baari`}
           </h2>
           
+          {/* Dice Box ko bada aur visible banaya */}
           <div className={styles.diceBox} style={{ backgroundColor: activeColor }}>
             <div className={`${styles.dice} ${isRolling ? styles.rolling : ''}`}>
-              {isRolling ? '?' : (diceValue === 0 ? '-' : diceValue)}
+              {isRolling ? '?' : (diceValue === 0 ? '🎲' : diceValue)}
             </div>
           </div>
           
-          {/* Button sirf human player ke liye dikhega active */}
           <button 
             className={styles.rollBtn} 
             onClick={rollDice}
             disabled={isRolling || diceValue > 0 || winner || players[currentPlayer].isBot}
             style={{ backgroundColor: activeColor }}
           >
-            {isRolling ? 'Rolling...' : 'Roll Dice'}
+            {isRolling ? 'Rolling...' : '🎲 Roll Dice'}
           </button>
           
           <p className={styles.statusText}>
